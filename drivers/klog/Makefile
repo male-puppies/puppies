@@ -8,22 +8,21 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=ntrack
+PKG_NAME:=klog
 PKG_RELEASE:=3
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/ntrack
+define KernelPackage/klog
   SUBMENU:=Other modules
-  TITLE:=nos track kernel driver
-  FILES:=$(PKG_BUILD_DIR)/ntrack.ko
-  DEPENDS:=+kmod-klog
-  AUTOLOAD:=$(call AutoProbe, klog, ntrack)
+  TITLE:=nos kernel debug log driver
+  FILES:=$(PKG_BUILD_DIR)/klog.ko
+  AUTOLOAD:=$(call AutoProbe,klog)
   KCONFIG:=
 endef
 
-define KernelPackage/ntrack/description
-  Kernel module to package mangle & auth,cap system.
+define KernelPackage/klog/description
+  Kernel module for debug printk level set.
 endef
 
 EXTRA_KCONFIG:= \
@@ -51,4 +50,4 @@ define Build/Compile
 		modules
 endef
 
-$(eval $(call KernelPackage,ntrack))
+$(eval $(call KernelPackage,klog))
