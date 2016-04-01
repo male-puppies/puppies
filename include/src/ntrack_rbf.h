@@ -22,6 +22,8 @@
 
 #endif /* __KERNEL__ */
 
+#include <ntrack_log.h>
+
 // #define RBF_IDX_SIZE 	(1024)
 #define RBF_NODE_SIZE	(1024 * 2)
 
@@ -48,8 +50,7 @@ rbf_t* rbf_init(void *mem, uint32_t size)
 	rbp->hdr.size = size - sizeof(rbf_hdr_t);
 	rbp->hdr.count = rbp->hdr.size / RBF_NODE_SIZE;
 
-	fprintf(stderr, "%s:%d mem: %d, node: %d\n", __FUNCTION__, 
-		size, rbp->hdr.size, rbp->hdr.count);
+	nt_info("%d mem: %d, node: %d\n", size, rbp->hdr.size, rbp->hdr.count);
 
 	return rbp;
 }

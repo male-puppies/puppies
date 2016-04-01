@@ -23,9 +23,8 @@ define Package/pps_comm/description
 endef
 
 define Build/InstallDev
-	echo ---$(1)----
-	mkdir -p $(1)/usr/include
-	$(CP) ./src/*.h $(1)/usr/include/
+	# echo ---$(TOOLCHAIN_DIR)----
+	$(CP) ./src/*.h $(TOOLCHAIN_DIR)/include/
 endef
 
 define Build/Compile
