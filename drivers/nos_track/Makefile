@@ -27,11 +27,12 @@ define KernelPackage/ntrack/description
 endef
 
 EXTRA_KCONFIG:= \
-	CONFIG_NTRACK=m
+	CONFIG_NTRACK=m 
 
 EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(EXTRA_KCONFIG)))) \
+	-I $(PKG_BUILD_DIR)/../klog/
 
 MAKE_OPTS:= \
 	ARCH="$(LINUX_KARCH)" \

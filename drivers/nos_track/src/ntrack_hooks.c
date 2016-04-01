@@ -1,6 +1,8 @@
 #include <linux/module.h>
 #include <linux/nos_track.h>
 
+#include "klog.h"
+
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack system driver"
 
