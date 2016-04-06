@@ -2,12 +2,12 @@
 
 #include <linux/nos_track.h>
 #include <ntrack_log.h>
+#include "ntrack_cap.h"
 
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack system driver"
 
 void *ntrack_klog_fd = NULL;
-extern int ntrack_init(void);
 
 static int __init ntrack_modules_init(void)
 {
@@ -19,7 +19,7 @@ static int __init ntrack_modules_init(void)
 	}
 	nt_info("module init.\n");
 
-	ret = ntrack_init();
+	ret = ncap_init();
 	if(ret) {
 		goto __err;
 	}
@@ -27,10 +27,10 @@ static int __init ntrack_modules_init(void)
 	return 0;
 
 __err:
+	ncap_cleanup();
 	if(ntrack_klog_fd) {
 		klog_fini(ntrack_klog_fd);
 	}
-
 	return ret;
 }
 

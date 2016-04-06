@@ -1,4 +1,6 @@
 #ifndef __NTRACK_RBF_H__
+#define __NTRACK_RBF_H__
+
 #ifdef __KERNEL__
 
 #include <linux/kernel.h>
@@ -42,7 +44,7 @@ typedef struct ringbuffer {
 	uint8_t buffer[0];
 } rbf_t;
 
-rbf_t* rbf_init(void *mem, uint32_t size)
+static inline rbf_t* rbf_init(void *mem, uint32_t size)
 {
 	rbf_t *rbp = (rbf_t*)mem;
 
@@ -50,12 +52,12 @@ rbf_t* rbf_init(void *mem, uint32_t size)
 	rbp->hdr.size = size - sizeof(rbf_hdr_t);
 	rbp->hdr.count = rbp->hdr.size / RBF_NODE_SIZE;
 
-	nt_info("mem: %d, node: %d-%d\n", mem, size, rbp->hdr.count);
+	nt_info("mem: %p, node: %d-%d\n", mem, size, rbp->hdr.count);
 
 	return rbp;
 }
 
-void *rbf_get_buff(rbf_t* rbp)
+static inline void *rbf_get_buff(rbf_t* rbp)
 {
 	uint16_t idx = (rbp->hdr.w + 1) % rbp->hdr.count;
 
@@ -67,12 +69,12 @@ void *rbf_get_buff(rbf_t* rbp)
 	return NULL;
 }
 
-void rbf_release_buff(rbf_t* rbp)
+static inline void rbf_release_buff(rbf_t* rbp)
 {
 	rbp->hdr.w = (rbp->hdr.w + 1) % rbp->hdr.count;
 }
 
-void *rbf_get_data(rbf_t *rbp)
+static inline void *rbf_get_data(rbf_t *rbp)
 {
 	uint16_t idx = rbp->hdr.r;
 
@@ -83,9 +85,9 @@ void *rbf_get_data(rbf_t *rbp)
 	return NULL;
 }
 
-void rbf_release_data(rbf_t *rbp)
+static inline void rbf_release_data(rbf_t *rbp)
 {
 	rbp->hdr.r = (rbp->hdr.r + 1) % rbp->hdr.count;
 }
 
-#endif //__NTRACK_RBF_H__
+#endif /* __NTRACK_RBF_H__ */
