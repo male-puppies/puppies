@@ -123,27 +123,27 @@ int klog_show_list(char *kbuf, int size)
                     "klog list:\n"
                     "%*s %*s %*s %*s %*s %*s %*s %*s\n",
                     16, "name",
-                    4, "verbose",
-                    4, "ratelimit",
-                    8, "interval",
-                    4, "burst",
-                    4, "restore_vb",
-                    4, "restore_rl",
-                    6, "expiration"
+                    8, "verbose",
+                    8, "rate",
+                    8, "intv",
+                    8, "burst",
+                    8, "rst_vb",
+                    8, "rst_rl",
+                    8, "expir"
                    );
 
     read_lock_bh(&g_klog_lock);
     list_for_each_entry(item, &g_klog_list, list) {
         len += snprintf(kbuf + len, size - len,
-                        "%*s 0x%*x 0x%*x %*d %*d 0x%*x 0x%*x %*lu\n",
+                        "%*s 0x%-*x 0x%-*x %-*d %-*d 0x%-*x 0x%-*x %-*lu\n",
                         16, item->name,
-                        4, item->verbose & 0xff,
-                        4, item->verbose >> 16,
+                        8, item->verbose & 0xff,
+                        8, item->verbose >> 16,
                         8, item->ratelimit.interval / HZ,
-                        4, item->ratelimit.burst,
-                        4, item->original_verbose & 0xff,
-                        4, item->original_verbose >> 16,
-                        6, (item->timer.expires - jiffies) / HZ);
+                        8, item->ratelimit.burst,
+                        8, item->original_verbose & 0xff,
+                        8, item->original_verbose >> 16,
+                        8, (item->timer.expires - jiffies) / HZ);
     }
     read_unlock_bh(&g_klog_lock);
     return len;

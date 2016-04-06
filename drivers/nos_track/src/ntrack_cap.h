@@ -8,7 +8,7 @@ typedef struct {
 	struct list_head head;
 
 	uint32_t buff_size;
-	void * buff[RBF_NODE_SIZE];
+	uint8_t buff[RBF_NODE_SIZE];
 } ncap_node_t;
 
 int ncap_init(void);
