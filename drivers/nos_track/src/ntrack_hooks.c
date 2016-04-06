@@ -79,7 +79,7 @@ static int __init ntrack_modules_init(void)
 {
 	int ret = 0;
 
-	ntrack_klog_fd = klog_init("ntrack", 0x0f, 0);
+	ntrack_klog_fd = klog_init("ntrack", 0x0e, 0);
 	if(!ntrack_klog_fd) {
 		return -ENOMEM;
 	}
