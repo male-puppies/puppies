@@ -50,7 +50,7 @@ rbf_t* rbf_init(void *mem, uint32_t size)
 	rbp->hdr.size = size - sizeof(rbf_hdr_t);
 	rbp->hdr.count = rbp->hdr.size / RBF_NODE_SIZE;
 
-	nt_info("%d mem: %d, node: %d\n", size, rbp->hdr.size, rbp->hdr.count);
+	nt_info("mem: %d, node: %d-%d\n", mem, size, rbp->hdr.count);
 
 	return rbp;
 }

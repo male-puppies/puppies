@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ntrack
+PKG_NAME:=ntrackd
 PKG_VERSION:=2015-08-06
 PKG_RELEASE=1
 
@@ -12,15 +12,15 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ntrack
+define Package/ntrackd
   SECTION:=Applications
   CATEGORY:=Puppies
   DEPENDS:=+pps_comm
-  TITLE:=Generic ntrack user space tools 
+  TITLE:=Generic ntrackd user space tools 
 endef
 
-define Package/ntrack/description
-  ntrack system for user track & flow track.
+define Package/ntrackd/description
+  ntrackd system for user track & flow track.
 endef
 
 define Build/Prepare
@@ -32,26 +32,26 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS)
 endef
 
-define Package/ntrack/install
+define Package/ntrackd/install
 	echo $(1) $(2)
 	$(CP) -a ./files/* $(1)/
 endef
 
-define Package/ntrack/postinst
+define Package/ntrackd/postinst
 if [ -z "$${IPKG_INSTROOT}" ]; then
 	echo "Enabling rc.d symlink for tbq"
-	/etc/init.d/ntrack enable
+	/etc/init.d/ntrackd enable
 fi
 exit 0
 endef
 
-define Package/ntrack/prerm
+define Package/ntrackd/prerm
 if [ -z "$${IPKG_INSTROOT}" ]; then
-	echo "Removing rc.d symlink for ntrack"
-	/etc/init.d/ntrack disable
+	echo "Removing rc.d symlink for ntrackd"
+	/etc/init.d/ntrackd disable
 fi
 exit 0
 endef
 
-$(eval $(call BuildPackage,ntrack))
+$(eval $(call BuildPackage,ntrackd))
 
