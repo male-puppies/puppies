@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ntrackd
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:=+pps_comm
+  DEPENDS:=+pps_comm +libpps
   TITLE:=Generic ntrackd user space tools 
 endef
 
@@ -28,9 +28,11 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) $(TARGET_CONFIGURE_OPTS)
-endef
+TARGET_LDFLAGS += -lpps
+
+MAKE_FLAGS += \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS)"
 
 define Package/ntrackd/install
 	echo $(1) $(2)

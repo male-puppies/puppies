@@ -3,7 +3,7 @@ src = main.c
 all:ntrack
 
 ntrack: $(src)
-	$(CC) $(src) -o $@
+	$(CC) $(src) $(CFLAGS) $(LDFLAGS) -o $@
 
 .PHONY: clean all
 
