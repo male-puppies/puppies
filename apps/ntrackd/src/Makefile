@@ -1,13 +1,13 @@
 src = main.c
 
-all:ntrack
+all:ntrackd
 
-ntrack: $(src)
+ntrackd: $(src)
 	$(CC) $(src) $(CFLAGS) $(LDFLAGS) -o $@
 
 .PHONY: clean all
 
 clean:
 	-rm -f *.o
-	-rm -f ntrack
+	-rm -f ntrackd
 	

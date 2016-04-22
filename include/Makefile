@@ -22,13 +22,17 @@ define Package/pps_comm/description
   common header for puppies apps.
 endef
 
-define Build/InstallDev
-	# echo ---$(TOOLCHAIN_DIR)----
+define Build/Prepare
 	$(CP) ./src/*.h $(TOOLCHAIN_DIR)/include/
 endef
 
 define Build/Compile
 	true
+endef
+
+define Build/InstallDev
+	# echo ---$(TOOLCHAIN_DIR)----
+	$(CP) ./src/*.h $(TOOLCHAIN_DIR)/include/
 endef
 
 $(eval $(call BuildPackage,pps_comm))

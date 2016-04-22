@@ -3,5 +3,5 @@
 #
 
 obj-${CONFIG_NTRACK} += ntrack.o
-ntrack-y	:= ntrack_hooks.o ntrack_cap.o
+ntrack-y	:= ntrack_hooks.o ntrack_msg.o
 

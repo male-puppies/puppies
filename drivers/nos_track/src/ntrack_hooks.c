@@ -6,7 +6,7 @@
 
 #include <linux/nos_track.h>
 #include <ntrack_log.h>
-#include "ntrack_cap.h"
+#include "ntrack_msg.h"
 
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack system driver"
@@ -57,7 +57,11 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 		return NF_ACCEPT;
 	}
 
-	if(ncap_enqueue(skb->data, skb->len, iph->saddr)) {
+	/* test */
+	nmsg_hdr_t hdr;
+	hdr.type = EN_MSG_T_PCAP;
+	hdr.len = skb->len;
+	if(nmsg_enqueue(&hdr, skb->data, skb->len, iph->saddr)) {
 		nt_debug("skb cap failed.\n");
 	}
 
@@ -85,7 +89,7 @@ static int __init ntrack_modules_init(void)
 	}
 
 	nt_info("ntrack cap init.\n");
-	ret = ncap_init();
+	ret = nmsg_init();
 	if(ret) {
 		goto __err;
 	}
@@ -99,7 +103,7 @@ static int __init ntrack_modules_init(void)
 	return 0;
 
 __err:
-	ncap_cleanup();
+	nmsg_cleanup();
 	if(ntrack_klog_fd) {
 		klog_fini(ntrack_klog_fd);
 	}
@@ -111,7 +115,7 @@ static void __exit ntrack_modules_exit(void)
 	nt_info("module cleanup.\n");
 
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
-	ncap_cleanup();
+	nmsg_cleanup();
 	klog_fini(ntrack_klog_fd);
 	return;
 }
