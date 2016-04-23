@@ -38,5 +38,15 @@ void nmsg_cleanup(void);
 int nmsg_enqueue(nmsg_hdr_t *hdr, void *buff, uint32_t buff_size, uint32_t key);
 #else /* __KERNEL__ */
 
+/* init the ntrack message system, for libpps.so call by others */
+int nt_message_init(void);
+
+typedef int (*nmsg_cb_t)(void *p);
+/*
+* process the kernel message.
+*/
+int nt_message_process(uint32_t *running, nmsg_cb_t cb);
+
+
 #endif /* KERNEL */
 

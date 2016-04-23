@@ -15,6 +15,7 @@
 
 #include <ntrack_rbf.h>
 #include <ntrack_log.h>
+#include <ntrack_msg.h>
 
 const char *fn_sys_mem = "/dev/mem";
 const char *fn_shm_uoff = "/proc/sys/kernel/nt_user_offset";
@@ -27,6 +28,7 @@ static void* shm_base_flow = NULL;
 static uint32_t shm_user_offset;
 static uint32_t shm_flow_offset;
 static uint32_t nt_cap_block_sz;
+static rbf_t *nt_message_rbf = NULL;
 
 static int proc_uint(uint32_t *out, const char *fname)
 {
@@ -97,20 +99,34 @@ static int shm_init(void)
 	return 0;
 }
 
-static int nt_msg_init(uint32_t core_idx)
+static int shm_rbf_init(void)
 {
-	rbf_t *rbp;
+	cpu_set_t set;
+	rbf_t *rbp = NULL;
 
-	rbp = rbf_init(shm_base_addr + nt_cap_block_sz * core_idx, nt_cap_block_sz);
-	if(!rbp) {
-		nt_error("rbp init\n");
-		return -EINVAL;
+	CPU_ZERO(&set);
+	if(sched_getaffinity(getpid(), sizeof(set), &set) == -1) {
+		nt_error("get affinity. %s\n", strerror(errno));
+		return errno;
+	}
+
+	for (int i=0; i<CPU_COUNT(&set); i++) {
+		if(CPU_ISSET(i, &set)) {
+			rbp = rbf_init(shm_base_addr + nt_cap_block_sz * i, nt_cap_block_sz);
+			if(!rbp) {
+				nt_error("rbp init\n");
+				continue;
+			}
+			nt_info("on core: %d, %p\n", i, rbp);
+			nt_message_rbf = rbp;
+			break;
+		}
 	}
 
 	return 0;
 }
 
-int nt_init(void)
+int nt_message_init(void)
 {
 	if (proc_pars_init()) {
 		return -EINVAL;
@@ -118,5 +134,31 @@ int nt_init(void)
 
 	if (shm_init()) {
 		return -EINVAL;
+	}
+
+	if (shm_rbf_init()) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int nt_message_process(uint32_t *running, nmsg_cb_t cb)
+{
+	void *p;
+
+	nt_assert(nt_message_rbf);
+	while(*running) {
+		p = rbf_get_data(nt_message_rbf);
+		if (!p) {
+			// nt_debug("read empty.\n");
+			sleep(0.01); //10ms
+			continue;
+		}
+		// nt_dump(p, 128, "node\n");
+		if(cb) {
+			cb(p);
+		}
+		rbf_release_data(nt_message_rbf);
 	}
 }

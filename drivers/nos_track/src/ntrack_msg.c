@@ -91,6 +91,11 @@ int nmsg_enqueue(nmsg_hdr_t *hdr, void *buf_in, uint32_t size, uint32_t key)
 		return -ENOMEM;
 	}
 
+	if(size + sizeof(*hdr) > RBF_NODE_SIZE) {
+		nt_error("too big message frame. %d\n", size);
+		return -EINVAL;
+	}
+
 	node = kmalloc(sizeof(nmsg_node_t), GFP_ATOMIC);
 	if(!node) {
 		nt_error("not enough mem.\n");
@@ -101,11 +106,10 @@ int nmsg_enqueue(nmsg_hdr_t *hdr, void *buf_in, uint32_t size, uint32_t key)
 	list_add(&node->head, &cur_msgq->list);
 	spin_unlock_bh(&cur_msgq->lock);
 
-	nt_assert(size + sizeof(nmsg_hdr_t) <= sizeof(node->buff));
 
-	node->buff_size = size + sizeof(nmsg_hdr_t);
-	memcpy(node->buff, hdr, sizeof(nmsg_hdr_t));
-	memcpy(node->buff + sizeof(nmsg_hdr_t), buf_in, size);
+	node->buff_size = size + sizeof(*hdr);
+	memcpy(node->buff, hdr, sizeof(*hdr));
+	memcpy(node->buff + sizeof(*hdr), buf_in, size);
 
 	/* raise the wq */
 	queue_work_on(KEY_TO_CORE(key), nmsg_wq, &cur_msgq->wq_msg);

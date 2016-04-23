@@ -2,6 +2,8 @@
 PPS_OBJ = utils.o nt_message.o
 LIB_BIN = libpps.so
 
+CFLAGS += -std=gnu99
+
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(FPIC) -c -o $@ $<
 

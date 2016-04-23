@@ -100,6 +100,9 @@ static int __init ntrack_modules_init(void)
 		goto __err;
 	}
 
+	/* setup user identify hook */
+	rcu_assign_pointer(nos_user_match_fn, NULL);
+
 	return 0;
 
 __err:
@@ -113,6 +116,9 @@ __err:
 static void __exit ntrack_modules_exit(void)
 {
 	nt_info("module cleanup.\n");
+
+	/* cleanup user identify hook */
+	rcu_assign_pointer(nos_user_match_fn, NULL);
 
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
 	nmsg_cleanup();

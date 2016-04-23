@@ -24,6 +24,7 @@ extern void *ntrack_klog_fd;
 #include <string.h>
 #include <inttypes.h>
 #include <fcntl.h>
+#include <assert.h>
 
 #include <sys/types.h>
 
@@ -54,7 +55,8 @@ void hexdump(FILE *fp, const void *data, int size);
 		fprintf(stderr, ##fmt); \
 		hexdump(stderr, buf, size); \
 	} while(0)
-// #define nt_trace(level, fmt...) 	klog_trace(ntrack_klog_fd, level, ##fmt)
+
+#define nt_assert(exp, fmt...) assert(exp)
 
 #endif /* __KERNEL__ */
 

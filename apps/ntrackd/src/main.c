@@ -14,52 +14,25 @@
 
 #include <ntrack_rbf.h>
 #include <ntrack_log.h>
+#include <ntrack_msg.h>
+
+static int fn_message_disp(void *p)
+{
+	nt_dump(p, 128, "cap:\n");
+	
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
-	cpu_set_t set;
-	rbf_t *rbp;
-	void *base_addr, *p;
-	uint32_t size = (RBF_NODE_SIZE) * 1024 + sizeof(rbf_hdr_t);
+	int running = 1;
 
-	CPU_ZERO(&set);
-
-	int fd = open("/dev/mem", O_RDWR);
-	if(fd == -1) {
-		nt_error("open shm.\n");
-		exit(EXIT_FAILURE);
+	if (nt_message_init()) {
+		nt_error("ntrack message init failed.\n");
+		return 0;
 	}
 
-	base_addr = mmap(0, 4<<20, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 16<<20);
-	if (!base_addr) {
-		nt_error("mem map.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	// memset(base_addr, 0xff, size);
-	rbp = rbf_init(base_addr, size);
-	if(!rbp) {
-		nt_error("rbp init\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	CPU_SET(0, &set);
-	if(sched_setaffinity(getpid(), sizeof(set), &set) == -1) {
-		nt_error("set p affinity.\n");
-		exit(EXIT_FAILURE);
-	}
-	// fprintf(stderr, "%d->%d core: %d\n", getppid(), getpid(), sched_getcpu());
-
-	while(1) {
-		p = rbf_get_data(rbp);
-		if (!p) {
-			// nt_debug("read empty.\n");
-			sleep(0.01);
-			continue;
-		}
-		nt_dump(p, 128, "node\n");
-		rbf_release_data(rbp);
-	}
+	nt_message_process(&running, fn_message_disp);
 
 	return 0;
 }
