@@ -30,23 +30,28 @@ extern void *ntrack_klog_fd;
 void hexdump(FILE *fp, const void *data, int size);
 
 #define nt_debug(fmt...) 	do{ \
-		fprintf(stderr, "[dbg] %s: ", __FUNCTION__, ##fmt); \
+		fprintf(stderr, "[dbg] %s: ", __FUNCTION__); \
+		fprintf(stderr, ##fmt); \
 	}while(0)
 
 #define nt_info(fmt...) 	do{ \
-		fprintf(stderr, "[inf] %s: ", __FUNCTION__, ##fmt); \
+		fprintf(stderr, "[inf] %s: ", __FUNCTION__); \
+		fprintf(stderr, ##fmt); \
 	}while(0)
 
 #define nt_warn(fmt...) 	do{ \
-		fprintf(stderr, "[war] %s: ", __FUNCTION__, ##fmt); \
+		fprintf(stderr, "[war] %s: ", __FUNCTION__); \
+		fprintf(stderr, ##fmt); \
 	}while(0)
 
 #define nt_error(fmt...) 	do{ \
-		fprintf(stderr, "[err] %s: ", __FUNCTION__, ##fmt); \
+		fprintf(stderr, "[err] %s: ", __FUNCTION__); \
+		fprintf(stderr, ##fmt); \
 	}while(0)
 
 #define nt_dump(buf, size, fmt...) 	do { \
-		fprintf(stderr, "[dump] %s: ", __FUNCTION__, ##fmt); \
+		fprintf(stderr, "[dump] %s: ", __FUNCTION__); \
+		fprintf(stderr, ##fmt); \
 		hexdump(stderr, buf, size); \
 	} while(0)
 // #define nt_trace(level, fmt...) 	klog_trace(ntrack_klog_fd, level, ##fmt)

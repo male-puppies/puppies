@@ -26,23 +26,6 @@
 
 #include <ntrack_log.h>
 
-
-/*
-* ntrack message system defines.
-*/
-enum {
-	EN_MSG_T_PCAP = 1,
-	EN_MSG_T_AUTH,
-};
-
-typedef struct {
-	uint16_t type;
-	uint16_t prio;
-	uint16_t len;
-	uint16_t crc;
-} nmsg_hdr_t;
-
-
 /* 
 * ring buffer system defines. 
 */

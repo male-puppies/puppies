@@ -7,8 +7,7 @@
 
 #include <linux/nos_track.h>
 #include <ntrack_rbf.h>
-
-#include "ntrack_msg.h"
+#include <ntrack_msg.h>
 
 #define nt_assert(x) 	BUG_ON(!(x))
 #define KEY_TO_CORE(k) 	((k) % nr_cpu_ids)
@@ -40,6 +39,9 @@ static inline nmsg_cpu_t * nmsg_target_cpu(uint32_t cpu)
 
 static void nmsg_wq_dequeue_func(struct work_struct *wq);
 
+/* save in kernel sysctl par */
+extern uint32_t nt_cap_block_sz;
+
 int nmsg_init(void)
 {
 	uint32_t size, i;
@@ -66,6 +68,7 @@ int nmsg_init(void)
 		/* test call */
 		queue_work_on(i, nmsg_wq, &nmsg->wq_msg);
 	}
+	nt_cap_block_sz = size;
 
 	return 0;
 }

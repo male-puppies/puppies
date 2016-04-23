@@ -15,8 +15,6 @@
 #include <ntrack_rbf.h>
 #include <ntrack_log.h>
 
-#define SHM_NAME "/dev/mem"
-
 int main(int argc, char *argv[])
 {
 	cpu_set_t set;
@@ -26,7 +24,7 @@ int main(int argc, char *argv[])
 
 	CPU_ZERO(&set);
 
-	int fd = open(SHM_NAME, O_RDWR);
+	int fd = open("/dev/mem", O_RDWR);
 	if(fd == -1) {
 		nt_error("open shm.\n");
 		exit(EXIT_FAILURE);
@@ -34,20 +32,20 @@ int main(int argc, char *argv[])
 
 	base_addr = mmap(0, 4<<20, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 16<<20);
 	if (!base_addr) {
-		perror("mem map.\n");
+		nt_error("mem map.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	// memset(base_addr, 0xff, size);
 	rbp = rbf_init(base_addr, size);
 	if(!rbp) {
-		perror("rbp init\n");
+		nt_error("rbp init\n");
 		exit(EXIT_FAILURE);
 	}
 	
 	CPU_SET(0, &set);
 	if(sched_setaffinity(getpid(), sizeof(set), &set) == -1) {
-		perror("set p affinity.\n");
+		nt_error("set p affinity.\n");
 		exit(EXIT_FAILURE);
 	}
 	// fprintf(stderr, "%d->%d core: %d\n", getppid(), getpid(), sched_getcpu());
@@ -55,11 +53,11 @@ int main(int argc, char *argv[])
 	while(1) {
 		p = rbf_get_data(rbp);
 		if (!p) {
-			fprintf(stderr, "read empty.\n");
-			sleep(1);
+			// nt_debug("read empty.\n");
+			sleep(0.01);
 			continue;
 		}
-		nt_dump(p, 64, "node");
+		nt_dump(p, 128, "node\n");
 		rbf_release_data(rbp);
 	}
 

@@ -1,5 +1,5 @@
 
-PPS_OBJ = pps.o
+PPS_OBJ = utils.o nt_message.o
 LIB_BIN = libpps.so
 
 %.o: %.c

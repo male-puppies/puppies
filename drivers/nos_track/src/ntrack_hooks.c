@@ -6,7 +6,7 @@
 
 #include <linux/nos_track.h>
 #include <ntrack_log.h>
-#include "ntrack_msg.h"
+#include <ntrack_msg.h>
 
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack system driver"

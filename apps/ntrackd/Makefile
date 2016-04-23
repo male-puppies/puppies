@@ -35,8 +35,9 @@ MAKE_FLAGS += \
 	LDFLAGS="$(TARGET_LDFLAGS)"
 
 define Package/ntrackd/install
-	echo $(1) $(2)
 	$(CP) -a ./files/* $(1)/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ntrackd $(1)/usr/sbin/ntrackd
 endef
 
 define Package/ntrackd/postinst
