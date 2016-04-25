@@ -121,6 +121,7 @@ static int nmsg_fill_buffer(rbf_t *rbfp, nmsg_node_t *node)
 	void *p = rbf_get_buff(rbfp);
 	if (!p) {
 		nt_debug("message ring full...\n");
+		rbf_dump(rbfp);
 		return -ENOMEM;
 	}
 	memcpy(p, node->buff, node->buff_size);

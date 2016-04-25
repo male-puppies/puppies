@@ -33,7 +33,7 @@
 
 typedef struct ringbuffer_header {
 	/* idx read, write record the idx[N] */
-	uint16_t r,w;
+	volatile uint16_t r,w;
 
 	uint32_t size;	//buffer size;
 	uint16_t count;	//node count;
@@ -50,18 +50,31 @@ static inline rbf_t* rbf_init(void *mem, uint32_t size)
 {
 	rbf_t *rbp = (rbf_t*)mem;
 
-	memset(rbp, 0, sizeof(rbf_t));
+	/* ROY: do not init mem block here, as shared by kernel & mulit users */
+	// memset(rbp, 0, sizeof(rbf_t));
 	rbp->hdr.size = size - sizeof(rbf_hdr_t);
 	rbp->hdr.count = rbp->hdr.size / RBF_NODE_SIZE;
 
-	nt_info("mem: %p, node: %d-%d\n", mem, size, rbp->hdr.count);
+	nt_info("\n\tmem: %p\n"
+		"\tsz: 0x%x count: 0x%x\n"
+		"\tr: %d, w: %d\n", 
+		mem, rbp->hdr.size, rbp->hdr.count, 
+		rbp->hdr.r, rbp->hdr.w);
 
 	return rbp;
 }
 
+static inline void rbf_dump(rbf_t *rbp)
+{
+	nt_debug("mem: %p, sz: 0x%x, count: 0x%x\n", 
+		rbp, rbp->hdr.size, rbp->hdr.count);
+
+	nt_debug("\tr: %d, w: %d\n", rbp->hdr.r, rbp->hdr.w);
+}
+
 static inline void *rbf_get_buff(rbf_t* rbp)
 {
-	uint16_t idx = (rbp->hdr.w + 1) % rbp->hdr.count;
+	volatile uint16_t idx = (rbp->hdr.w + 1) % rbp->hdr.count;
 
 	/* overflow ? */
 	if (idx != rbp->hdr.r) {

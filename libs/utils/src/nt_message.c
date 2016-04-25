@@ -70,9 +70,10 @@ static int proc_pars_init(void)
 	}
 
 	nt_info("nt proc: \n"
-		"\tuser offset: %d\n", shm_user_offset,
-		"\tflow offset: %d\n", shm_flow_offset,
-		"\tblock cap size: %d\n", nt_cap_block_sz);
+		"\tuser offset: 0x%x\n" 
+		"\tflow offset: 0x%x\n" 
+		"\tblock cap size: 0x%x\n", 
+		shm_user_offset, shm_flow_offset, nt_cap_block_sz);
 
 	return 0;
 }
@@ -109,8 +110,9 @@ static int shm_rbf_init(void)
 		nt_error("get affinity. %s\n", strerror(errno));
 		return errno;
 	}
+	fprintf(stderr, "cpu sets: 0x%x\n", *(unsigned long*)&set);
 
-	for (int i=0; i<CPU_COUNT(&set); i++) {
+	for (int i=0; i<=CPU_COUNT(&set); i++) {
 		if(CPU_ISSET(i, &set)) {
 			rbp = rbf_init(shm_base_addr + nt_cap_block_sz * i, nt_cap_block_sz);
 			if(!rbp) {
@@ -120,6 +122,8 @@ static int shm_rbf_init(void)
 			nt_info("on core: %d, %p\n", i, rbp);
 			nt_message_rbf = rbp;
 			break;
+		} else {
+			nt_info("not core: %d\n", i);
 		}
 	}
 
@@ -159,6 +163,7 @@ int nt_message_process(uint32_t *running, nmsg_cb_t cb)
 		if(cb) {
 			cb(p);
 		}
+		rbf_dump(nt_message_rbf);
 		rbf_release_data(nt_message_rbf);
 	}
 }

@@ -59,6 +59,8 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 
 	/* test */
 	nmsg_hdr_t hdr;
+	
+	memset(&hdr, 0, sizeof(hdr));
 	hdr.type = EN_MSG_T_PCAP;
 	hdr.len = skb->len;
 	if(nmsg_enqueue(&hdr, skb->data, skb->len, iph->saddr)) {
