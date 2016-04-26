@@ -30,6 +30,9 @@ static uint32_t shm_flow_offset;
 static uint32_t nt_cap_block_sz;
 static rbf_t *nt_message_rbf = NULL;
 
+struct nos_flow_info *nos_flow_info_base = NULL;
+struct nos_user_info *nos_user_info_base = NULL;
+
 static int proc_uint(uint32_t *out, const char *fname)
 {
 	int fd = open(fname, O_RDONLY);
@@ -96,6 +99,9 @@ static int shm_init(void)
 
 	nt_info("shm base: %p, user: %p, flow: %p\n", \
 		shm_base_addr, shm_base_user, shm_base_flow);
+
+	nos_flow_info_base = (struct nos_flow_info)shm_base_flow;
+	nos_user_info_base = (struct nos_user_info)shm_base_user;
 
 	return 0;
 }

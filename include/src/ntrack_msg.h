@@ -36,6 +36,7 @@ void nmsg_cleanup(void);
 * @return success 0, -num failed.
 */
 int nmsg_enqueue(nmsg_hdr_t *hdr, void *buff, uint32_t buff_size, uint32_t key);
+
 #else /* __KERNEL__ */
 
 /* init the ntrack message system, for libpps.so call by others */
