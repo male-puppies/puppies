@@ -100,8 +100,8 @@ static int shm_init(void)
 	nt_info("shm base: %p, user: %p, flow: %p\n", \
 		shm_base_addr, shm_base_user, shm_base_flow);
 
-	nos_flow_info_base = (struct nos_flow_info)shm_base_flow;
-	nos_user_info_base = (struct nos_user_info)shm_base_user;
+	nos_flow_info_base = (struct nos_flow_info*)shm_base_flow;
+	nos_user_info_base = (struct nos_user_info*)shm_base_user;
 
 	return 0;
 }

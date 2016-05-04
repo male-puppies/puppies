@@ -25,12 +25,27 @@
 extern "C" {
 #endif
 
+#ifdef __KERNEL__
+
+#include <linux/slab.h>
+#include <linux/ratelimit.h>
+
+#define NX_JSON_CALLOC()	kzalloc(sizeof(nx_json), GFP_KERNEL)
+#define NX_JSON_FREE(json)	kfree(json)
+#define NX_JSON_REPORT_ERROR(msg, p) \
+	pr_info_ratelimited("NXJSON PARSE ERROR (%d): " msg " at %s\n", __LINE__, p)
+
+#define strtol simple_strtol
+
+#else
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 #include <assert.h>
-#include <errno.h>
+
+#endif
 
 #include "nxjson.h"
 
@@ -51,7 +66,9 @@ static const nx_json dummy={ NX_JSON_NULL };
 
 static nx_json* create_json(nx_json_type type, const char* key, nx_json* parent) {
   nx_json* js=NX_JSON_CALLOC();
-  assert(js);
+  if (!js)
+  	return 0;
+  //assert(js);
   js->type=type;
   js->key=key;
   if (!parent->last_child) {
@@ -129,26 +146,31 @@ static char* unescape_string(char* s, char** end, nx_json_unicode_encoder encode
         case 't':
           *d++='\t'; p++;
           break;
-        case 'u': // unicode
-          if (!encoder) {
+        case 'u': // unicode 
+		{
+		  char *ps;
+		  int h1, h2, h3, h4;
+		  unsigned int codepoint;
+		  if (!encoder) {
             // leave untouched
             *d++=c;
             break;
           }
-          char* ps=p-1;
-          int h1, h2, h3, h4;
+          ps=p-1;
           if ((h1=hex_val(p[1]))<0 || (h2=hex_val(p[2]))<0 || (h3=hex_val(p[3]))<0 || (h4=hex_val(p[4]))<0) {
             NX_JSON_REPORT_ERROR("invalid unicode escape", p-1);
             return 0;
           }
-          unsigned int codepoint=h1<<12|h2<<8|h3<<4|h4;
+          codepoint=h1<<12|h2<<8|h3<<4|h4;
           if ((codepoint & 0xfc00)==0xd800) { // high surrogate; need one more unicode to succeed
-            p+=6;
+			unsigned int codepoint2;
+
+			p+=6;
             if (p[-1]!='\\' || *p!='u' || (h1=hex_val(p[1]))<0 || (h2=hex_val(p[2]))<0 || (h3=hex_val(p[3]))<0 || (h4=hex_val(p[4]))<0) {
               NX_JSON_REPORT_ERROR("invalid unicode surrogate", ps);
               return 0;
             }
-            unsigned int codepoint2=h1<<12|h2<<8|h3<<4|h4;
+            codepoint2=h1<<12|h2<<8|h3<<4|h4;
             if ((codepoint2 & 0xfc00)!=0xdc00) {
               NX_JSON_REPORT_ERROR("invalid unicode surrogate", ps);
               return 0;
@@ -161,6 +183,7 @@ static char* unescape_string(char* s, char** end, nx_json_unicode_encoder encode
           }
           p+=5;
           break;
+        }
         default:
           // leave untouched
           *d++=c;
@@ -252,9 +275,11 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
         break;
       case '{':
         js=create_json(NX_JSON_OBJECT, key, parent);
+		if (!js)
+			return 0;
         p++;
         while (1) {
-          const char* new_key;
+          const char* new_key = NULL;
           p=parse_key(&new_key, p, encoder);
           if (!p) return 0; // error
           if (*p=='}') return p+1; // end of object
@@ -263,7 +288,9 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
         }
       case '[':
         js=create_json(NX_JSON_ARRAY, key, parent);
-        p++;
+		if (!js)
+			return 0;
+		p++;
         while (1) {
           p=parse_value(js, 0, p, encoder);
           if (!p) return 0; // error
@@ -274,22 +301,27 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
       case '"':
         p++;
         js=create_json(NX_JSON_STRING, key, parent);
+		if (!js)
+			return 0;
         js->text_value=unescape_string(p, &p, encoder);
         if (!js->text_value) return 0; // propagate error
         return p;
       case '-': case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
         {
+		  char* pe;
           js=create_json(NX_JSON_INTEGER, key, parent);
-          char* pe;
-          js->int_value=strtoll(p, &pe, 0);
-          if (pe==p || errno==ERANGE) {
+		  if (!js)
+		  	return 0;
+          js->int_value=strtol(p, &pe, 0);
+          if (pe==p) {
             NX_JSON_REPORT_ERROR("invalid number", p);
             return 0; // error
           }
+		#ifndef __KERNEL__
           if (*pe=='.' || *pe=='e' || *pe=='E') { // double value
             js->type=NX_JSON_DOUBLE;
             js->dbl_value=strtod(p, &pe);
-            if (pe==p || errno==ERANGE) {
+            if (pe==p) {
               NX_JSON_REPORT_ERROR("invalid number", p);
               return 0; // error
             }
@@ -297,11 +329,14 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
           else {
             js->dbl_value=js->int_value;
           }
+		#endif
           return pe;
         }
       case 't':
         if (!strncmp(p, "true", 4)) {
           js=create_json(NX_JSON_BOOL, key, parent);
+		  if (!js)
+		  	return 0;
           js->int_value=1;
           return p+4;
         }
@@ -310,6 +345,8 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
       case 'f':
         if (!strncmp(p, "false", 5)) {
           js=create_json(NX_JSON_BOOL, key, parent);
+		  if (!js)
+		  	return 0;
           js->int_value=0;
           return p+5;
         }
@@ -317,8 +354,10 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
         return 0; // error
       case 'n':
         if (!strncmp(p, "null", 4)) {
-          create_json(NX_JSON_NULL, key, parent);
-          return p+4;
+          js = create_json(NX_JSON_NULL, key, parent);
+		  if (!js)
+		  	return 0;
+		  return p+4;
         }
         NX_JSON_REPORT_ERROR("unexpected chars", p);
         return 0; // error
@@ -362,8 +401,8 @@ const nx_json* nx_json_parse(char* text, nx_json_unicode_encoder encoder) {
 }
 
 const nx_json* nx_json_get(const nx_json* json, const char* key) {
-  if (!json || !key) return &dummy; // never return null
   nx_json* js;
+  if (!json || !key) return &dummy; // never return null
   for (js=json->child; js; js=js->next) {
     if (js->key && !strcmp(js->key, key)) return js;
   }
@@ -371,8 +410,8 @@ const nx_json* nx_json_get(const nx_json* json, const char* key) {
 }
 
 const nx_json* nx_json_item(const nx_json* json, int idx) {
-  if (!json) return &dummy; // never return null
   nx_json* js;
+  if (!json) return &dummy; // never return null  
   for (js=json->child; js; js=js->next) {
     if (!idx--) return js;
   }

@@ -56,6 +56,7 @@ int nmsg_init(void)
 		return -ENOMEM;
 	}
 
+	memset(nos_track_cap_base, 0, nos_track_cap_size);
 	/* sizeof percpu's message buffer */
 	size = nos_track_cap_size / nr_cpu_ids;
 	for(i=0; i<nr_cpu_ids; i++) {

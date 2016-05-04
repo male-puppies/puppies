@@ -28,16 +28,55 @@
 #include <stdint.h>
 #endif
 
+/* kernel conf json */
+/*
+{
+	Auto: {
+		IPSets: ["office", "custom", "guest"],
+		URL: {
+			url: "http://www.xxx.com",
+			pars: ["ip", "mac", "uid", "umagic"]
+		}
+	},
+	Web: {
+		IPSets: [],
+		URL: {
+			url: "",
+			pars: [],
+		}
+	}
+}
+*/
+
+#define NETLINK_NTRACK 28
+
+
+
+#ifdef __KERNEL__
 
 /* KERNEL use for parse json */
-typedef struct {
-	ip_list_t ip_list;
-	ip_range_t ip_range;
-
-} match_ip_t;
+#define MAX_URL_LEN 512
+#define MAX_URL_PAR_NUM 32
+#define MAX_URL_PAR_LEN 32
 
 typedef struct {
-	match_ip_t ips;
-	match_mac_t macs;
+	char url[MAX_URL_LEN];
+	char url_pars[MAX_URL_PAR_NUM][MAX_URL_PAR_LEN];
+} redir_url_t;
+
+/* ipset hash:ip hash:mac check src address from skb. */
+#define MAX_USR_SET 4
+typedef struct {
+	uint32_t num_idx;
+	ip_set_id_t uset_idx[MAX_USR_SET];
 	redir_url_t url;
-} auth_conf_t; 
+} auth_rule_t; 
+
+#define MAX_URL_RULES 64
+typedef struct {
+	int num_rules;
+	auth_rule_t rules[MAX_URL_RULES];
+} G_AUTHCONF_t;
+extern G_AUTHCONF_t *G_AuthConf;
+
+#endif //__KERNEL__
