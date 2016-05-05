@@ -11,9 +11,34 @@
 #include <ntrack_log.h>
 #include <ntrack_msg.h>
 #include <ntrack_auth.h>
+#include <ntrack_comm.h>
 
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack system driver"
+
+int l3filter(struct iphdr* iph)
+{
+	//TCP, UDP, ICMP, supported.
+	if ((iph->protocol != IPPROTO_TCP) 
+		&& (iph->protocol != IPPROTO_UDP) 
+		&& (iph->protocol != IPPROTO_ICMP)) {
+		return 1;
+	}
+
+	//loopback, lbcast filter.
+	if (ipv4_is_lbcast(iph->saddr) || 
+		ipv4_is_lbcast(iph->daddr) ||
+			ipv4_is_loopback(iph->saddr) || 
+			ipv4_is_loopback(iph->daddr) ||
+			ipv4_is_multicast(iph->saddr) ||
+			ipv4_is_multicast(iph->daddr) || 
+			ipv4_is_zeronet(iph->saddr) ||
+			ipv4_is_zeronet(iph->daddr)){
+		return 1;
+	}
+
+	return 0;
+}
 
 static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops, 
 		struct sk_buff *skb,
@@ -23,6 +48,7 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 {
 	struct nf_conn *ct;
 	struct iphdr *iph;
+	struct nos_user_info *ui;
 	// struct sk_buff *linear_skb = NULL, *use_skb = NULL;
 	enum ip_conntrack_info ctinfo;
 
@@ -45,35 +71,27 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 		return NF_ACCEPT;
 	}
 
-	//TCP, UDP, ICMP, supported.
 	iph = ip_hdr(skb);
-	if ((iph->protocol != IPPROTO_TCP) 
-		&& (iph->protocol != IPPROTO_UDP) 
-		&& (iph->protocol != IPPROTO_ICMP)) {
+	if (l3filter(iph)) {
 		return NF_ACCEPT;
 	}
 
-	//loopback, lbcast filter.
-	if (ipv4_is_lbcast(iph->saddr) || 
-		ipv4_is_lbcast(iph->daddr) ||
-			ipv4_is_loopback(iph->saddr) || 
-			ipv4_is_loopback(iph->daddr) ||
-			ipv4_is_multicast(iph->saddr) ||
-			ipv4_is_multicast(iph->daddr) || 
-			ipv4_is_zeronet(iph->saddr) ||
-			ipv4_is_zeronet(iph->daddr))
-	{
-		return NF_ACCEPT;
+	ui = nt_user(nos);
+	if(user_need_redirect(ui)) {
+		int ulen;
+		char *url;
+		ntrack_get_url(ui->hdr.rule_idx, &url, &ulen);
+		ntrack_redirect(url, ulen, skb, in, out);
 	}
 
 	/* test */
-	nmsg_hdr_t hdr;
-	memset(&hdr, 0, sizeof(hdr));
-	hdr.type = EN_MSG_T_NODE;
-	hdr.data_len = sizeof(struct nos_track);
-	if(nmsg_enqueue(&hdr, nos, hdr.data_len, 0)) {
-		nt_debug("message en_q failed.\n");
-	}
+	// nmsg_hdr_t hdr;
+	// memset(&hdr, 0, sizeof(hdr));
+	// hdr.type = EN_MSG_T_NODE;
+	// hdr.data_len = sizeof(struct nos_track);
+	// if(nmsg_enqueue(&hdr, nos, hdr.data_len, 0)) {
+	// 	nt_debug("message en_q failed.\n");
+	// }
 
 	return NF_ACCEPT;
 }
@@ -113,60 +131,6 @@ static unsigned int ntrack_hook_test(const struct nf_hook_ops *ops,
 	return NF_ACCEPT;
 }
 
-/* ipset hash:ip hash:mac check src address from skb. */
-static int ntrack_user_match(uint32_t addr, struct sk_buff *skb)
-{
-	int ret = 0, i, j;
-	struct ip_set_adt_opt opt;
-	struct xt_action_param act;
-	struct net_device *indev, *dev;
-	// const struct xt_set_info *set = (const void *) em->data;
-
-	G_AUTHCONF_t *conf = rcu_dereference(G_AuthConf);
-	if(!conf) {
-		return 0;
-	}
-
-	if(!conf->num_rules) {
-		return 0;
-	}
-
-	act.family = NFPROTO_IPV4;
-	act.thoff = ip_hdrlen(skb);
-	act.hooknum = 0;
-
-	opt.family = act.family;
-	opt.dim = IPSET_DIM_THREE;
-	opt.flags = IPSET_DIM_ONE_SRC;
-	opt.cmdflags = 0;
-	opt.ext.timeout = ~0u;
-
-	rcu_read_lock();
-	dev = skb->dev;
-	if (dev && skb->skb_iif)
-		indev = dev_get_by_index_rcu(dev_net(dev), skb->skb_iif);
-
-	/* conntrack init (pre routing) */
-	act.in      = indev ? indev : dev;
-	act.out     = dev;
-
-	/* find src addr */
-	for (i = 0; i < conf->num_rules; ++i) {
-		auth_rule_t *rule = &conf->rules[i];
-		for (j = 0; j < rule->num_idx; ++j) {
-			ret = ip_set_test(rule->uset_idx[j], skb, &act, &opt);
-			if (ret) {
-				nt_debug("ipset test match: %d\n", ret);
-				goto __matched;
-			}
-		}
-	}
-
-__matched:
-	rcu_read_unlock();
-	return ret; //not user
-}
-
 static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	{
 		.hook = ntrack_hook_fw,
@@ -184,6 +148,7 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	}
 };
 
+extern int ntrack_user_match(struct nos_user_info *ui, struct sk_buff *skb);
 extern int ntrack_conf_init(void);
 extern void ntrack_conf_exit(void);
 void *ntrack_klog_fd = NULL;

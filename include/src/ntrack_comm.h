@@ -2,6 +2,28 @@
 
 #include <linux/nos_track.h>
 
+#ifdef __KERNEL__
+
+static inline struct nos_flow_info *
+nt_flow(struct nos_track *nt)
+{
+	return nt->flow;
+}
+
+static inline struct nos_user_info *
+nt_user(struct nos_track *nt)
+{
+	return nt->user;
+}
+
+static inline struct nos_user_info *
+nt_peer(struct nos_track *nt)
+{
+	return nt->peer;
+}
+
+#else //user space.
+
 /* node track */
 extern struct nos_flow_info *nos_flow_info_base;
 extern struct nos_user_info *nos_user_info_base;
@@ -27,9 +49,6 @@ nt_get_user_by_flow(uint32_t f_id, uint32_t f_magic)
 }
 /* end node track */
 
-/* auth conf & status update */
-int nt_auth_conf(auth_conf_t o)
-{
-	return 0;
-}
 
+
+#endif //__KERNEL__

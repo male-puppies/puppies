@@ -54,6 +54,7 @@ struct m2k {
 	struct nlmsghdr hdr;
 	char data[4096];
 };
+
 int xmit(char *data)
 {
 	struct sockaddr_nl kpeer;
@@ -98,6 +99,24 @@ static int fn_message_disp(void *p)
 	return 0;
 }
 
+const char *conf_str = " \
+	[{\
+		\"Name\": \"\", \
+		\"IPSets\": [\"baidu\", \"weixin\", \"3p\"], \
+		\"URL\": { \
+			\"url\": \"http://www.xxx.com\", \
+			\"pars\": [\"ip\", \"mac\", \"uid\", \"umagic\"] \
+		} \
+	}, \
+	{ \
+		\"Name\": \"\", \
+		\"IPSets\": [], \
+		\"URL\": { \
+			\"url\": \"\", \
+			\"pars\": null \
+		} \
+	}]";
+
 int main(int argc, char *argv[])
 {
 	cpu_set_t set;
@@ -123,7 +142,7 @@ int main(int argc, char *argv[])
 
 	nl_init();
 
-	xmit("hahahaaha");
+	xmit(conf_str);
 
 	nt_message_process(&running, fn_message_disp);
 
