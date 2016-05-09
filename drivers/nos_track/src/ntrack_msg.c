@@ -9,7 +9,6 @@
 #include <ntrack_rbf.h>
 #include <ntrack_msg.h>
 
-#define nt_assert(x) 	BUG_ON(!(x))
 #define KEY_TO_CORE(k) 	((k) % nr_cpu_ids)
 #define NCAP_MAX_COUNT 	(2048)
 

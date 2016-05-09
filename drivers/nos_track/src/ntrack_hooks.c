@@ -78,10 +78,7 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 
 	ui = nt_user(nos);
 	if(user_need_redirect(ui)) {
-		int ulen;
-		char *url;
-		ntrack_get_url(ui->hdr.rule_idx, &url, &ulen);
-		ntrack_redirect(url, ulen, skb, in, out);
+		ntrack_redirect(ui, skb, in, out);
 	}
 
 	/* test */

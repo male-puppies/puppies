@@ -13,6 +13,7 @@ extern void *ntrack_klog_fd;
 #define nt_error(fmt...) 	klog_error(ntrack_klog_fd, ##fmt)
 #define nt_dump(buf, size, fmt, args...) 	klog_dumpbuf(ntrack_klog_fd, buf, size, fmt, ##args)
 #define nt_trace(level, fmt...) 	klog_trace(ntrack_klog_fd, level, ##fmt)
+#define nt_assert(x, fmt...) 	BUG_ON(!(x))
 
 #else /* end kernel */
 

@@ -70,7 +70,7 @@ static int auth_reset(struct sk_buff *skb, const struct net_device *dev)
 	return 0;
 }
 
-static int auth_URL(const char *url, int urllen, struct sk_buff *skb, const struct net_device *dev) {
+static int auth_http(const char *url, int urllen, struct sk_buff *skb, const struct net_device *dev) {
 	struct sk_buff *nskb;
 	struct ethhdr *neth, *oeth;
 	struct iphdr *niph, *oiph;
@@ -135,19 +135,54 @@ static int auth_URL(const char *url, int urllen, struct sk_buff *skb, const stru
 	return 0;
 }
 
-int ntrack_redirect(const char *url, int urllen, 
+#define URL_STR_FMT "http://10.1.16.18/index.html?ip=%s&mac=%s&in=%s&uid=%s&magic=%s"
+
+const char http_redir_fmt[] = "HTTP/1.1 302 Moved Temporarily\r\n"\
+	"Location: "URL_STR_FMT"\r\n"\
+	"Content-Type: text/html;\r\n"\
+	"Connection: close\r\n"\
+	"Cache-Control: no-cache\r\n\r\n"\
+	"<html><meta http-equiv=\"refresh\" content=\"0;url="URL_STR_FMT"\"></html>";
+
+const int redirect_len = sizeof(http_redir_fmt) + \
+	(2 * IFNAMSIZ) + \
+	(2 * sizeof("255.255.255.255")) + \
+	(2 * sizeof("00:01:02:03:04:05")) + \
+	(2 * sizeof("4294967295")) + \
+	(2 * sizeof("4294967295")); //eth + ip + mac + 4 * (uint32-string)
+
+int ntrack_redirect(struct nos_user_info *ui, 
 			struct sk_buff *skb,
 			const struct net_device *in,
 			const struct net_device *out)
 {
 	/* 构造一个URL重定向包, 从in接口发出去 */
-	if(auth_URL(url, urllen, skb, in)){
+	char *url;
+	int len;
+
+	url = kmalloc(redirect_len, GFP_NOWAIT);
+	if(!url) {
+		nt_error("kmalloc failed.\n");
+		goto __finished;
+	}
+	len = snprintf(url, redirect_len, http_redir_fmt, 
+		"1.2.3.4", "aa:bb:cc:dd:ee:ff", "lan0", "4294967295", "4294967295",
+		"1.2.3.4", "aa:bb:cc:dd:ee:ff", "lan0", "4294967295", "4294967295");
+	nt_assert(len > 0 && len <= redirect_len);
+
+	nt_debug("send redirect http[%d] length: %d\n", redirect_len, len);
+	if(auth_http(url, len, skb, in)) {
 		nt_error("error send redirect url.\n");
-		return -1;
+		goto __finished;
 	}
 
 	/* 构造一个reset包, 从out接口发出去 */
 	if (out)
 		auth_reset(skb, out);
+
+__finished:
+	if(url) {
+		kfree(url);
+	}
 	return 0;
 }

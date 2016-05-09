@@ -99,22 +99,16 @@ static int fn_message_disp(void *p)
 	return 0;
 }
 
-const char *conf_str = " \
+char *conf_str = " \
 	[{\
 		\"Name\": \"\", \
 		\"IPSets\": [\"baidu\", \"weixin\", \"3p\"], \
-		\"URL\": { \
-			\"url\": \"http://www.xxx.com\", \
-			\"pars\": [\"ip\", \"mac\", \"uid\", \"umagic\"] \
-		} \
+		\"RedirectFlags\": 1 \
 	}, \
 	{ \
 		\"Name\": \"\", \
 		\"IPSets\": [], \
-		\"URL\": { \
-			\"url\": \"\", \
-			\"pars\": null \
-		} \
+		\"RedirectFlags\": 0 \
 	}]";
 
 int main(int argc, char *argv[])

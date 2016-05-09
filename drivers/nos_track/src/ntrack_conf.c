@@ -13,27 +13,6 @@
 
 #include "nxjson.h"
 
-/* test */
-/*
-const char *conf_str = " \
-	[{\
-		\"Name\": \"\", \
-		\"IPSets\": [\"baidu\", \"weixin\", \"3p\"], \
-		\"Url\": { \
-			\"url\": \"http://www.xxx.com\", \
-			\"pars\": [\"ip\", \"mac\", \"uid\", \"umagic\"] \
-		} \
-	}, \
-	{ \
-		\"Name\": \"\", \
-		\"IPSets\": [], \
-		\"Url\": { \
-			\"url\": \"\", \
-			\"pars\": null \
-		} \
-	}]";
-*/
-
 void ntrack_conf_free(G_AUTHCONF_t *conf)
 {
 	/* FIXME: rcu need */
@@ -65,7 +44,7 @@ int ntrack_conf_sync(char *conf_str)
 
 	i = 0;
 	while((node = nx_json_item(json, i++)) != NULL) {
-		const nx_json *str, *sets, *url;
+		const nx_json *str, *sets, *flags;
 
 		if (node->type == NX_JSON_NULL) {
 			break;
@@ -107,34 +86,12 @@ int ntrack_conf_sync(char *conf_str)
 			}
 		}
 
-		/* get url */
-		url = nx_json_get(node, "URL");
-		if(url->type == NX_JSON_OBJECT) {
-			int k;
-			const nx_json *url, *pars;
-			url = nx_json_get(url, "url");
-			if(url->type == NX_JSON_STRING) {
-				strncpy(rule.URL.url, url->text_value, sizeof(rule.URL.url));
-				rule.URL.url_len = strlen(rule.URL.url);
-				nt_info("rule: %d, url: [%s]\n", rule.URL.url_len, rule.URL.url);
-			}
-			pars = nx_json_get(url, "pars");
-			if (pars->type == NX_JSON_ARRAY) {
-				k = 0;
-				while((str = nx_json_item(pars, k++)) != NULL) {
-					if(str->type != NX_JSON_STRING) {
-						continue;
-					}
-					strncpy(rule.URL.pars[k], str->text_value, sizeof(rule.URL.pars[0]));
-					nt_info("\tpar: %d, %s\n", k, rule.URL.pars[k]);
-					if(k >= MAX_URL_PAR_NUM) {
-						nt_error("url par num overflow.\n");
-						break;
-					}
-				}
-			}
+		/* get Redirect flags */
+		flags = nx_json_get(node, "RedirectFlags");
+		if(flags->type == NX_JSON_INTEGER) {
+			rule.redirect_flags = flags->int_value;
 		} else {
-			nt_error("rule: %i, URL error fmt.\n", i);
+			nt_error("rule: %i, redirect flag type error.\n", i);
 		}
 
 		/* save rule to Global configure. */
@@ -143,7 +100,7 @@ int ntrack_conf_sync(char *conf_str)
 			conf_tmp->rules[conf_tmp->num_rules] = rule;
 			conf_tmp->num_rules ++;
 			if(conf_tmp->num_rules > MAX_URL_RULES) {
-				nt_error("url rules overflow.\n");
+				nt_error("rules overflow.\n");
 				break;
 			}
 		}
@@ -222,9 +179,9 @@ __matched:
 	return ret; //not user
 }
 
-int ntrack_get_url(int idx, char **url, int *len)
+int user_need_redirect(struct nos_user_info *ui) 
 {
-	redir_url_t *URL;
+	int8_t idx = ui->hdr.rule_idx;
 	G_AUTHCONF_t *conf = rcu_dereference(G_AuthConf);
 
 	if(!conf) {
@@ -236,15 +193,10 @@ int ntrack_get_url(int idx, char **url, int *len)
 		return -EINVAL;
 	}
 
-	URL = &conf->rules[idx].URL;
-	if(URL->url_len > 0) {
-		*url = URL->url;
-		*len = URL->url_len;
-	}
-
-	return 0;
+	return conf->rules[idx].redirect_flags;
 }
 
+/* config netlink sockets */
 static struct sock *nl_sock = NULL;
 struct {
     __u32 pid;
