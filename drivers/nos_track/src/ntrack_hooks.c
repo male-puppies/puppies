@@ -77,19 +77,29 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 	}
 
 	ui = nt_user(nos);
-	if(user_need_redirect(ui)) {
-		ntrack_redirect(ui, skb, in, out);
+	if (user_need_redirect(ui)) {
+		if(auth_check_http(iph, skb)) {
+			ntrack_redirect(ui, skb, in, out);
+		}
 	}
 
-	/* test */
-	// nmsg_hdr_t hdr;
-	// memset(&hdr, 0, sizeof(hdr));
-	// hdr.type = EN_MSG_T_NODE;
-	// hdr.data_len = sizeof(struct nos_track);
-	// if(nmsg_enqueue(&hdr, nos, hdr.data_len, 0)) {
-	// 	nt_debug("message en_q failed.\n");
-	// }
+	if (user_timeout(ui)) {
+		/* user online message */
+		nmsg_hdr_t hdr;
+		auth_msg_t auth;
 
+		memset(&hdr, 0, sizeof(hdr));
+		hdr.type = en_MSG_t_AUTH;
+		hdr.data_len = sizeof(auth);
+
+		auth.id = ui->id;
+		auth.magic = ui->magic;
+		if(nmsg_enqueue(&hdr, &auth, hdr.data_len, 0)) {
+			nt_debug("skb cap failed.\n");
+		}
+		user_update_timestamp(ui);
+	}
+	
 	return NF_ACCEPT;
 }
 

@@ -11,9 +11,9 @@
 * ntrack message system defines.
 */
 enum {
-	EN_MSG_T_PCAP = 1,
-	EN_MSG_T_NODE,
-	EN_MSG_T_AUTH,
+	en_MSG_t_PCAP = 1,
+	en_MSG_t_NODE,
+	en_MSG_t_AUTH,
 };
 
 typedef struct {
@@ -22,6 +22,11 @@ typedef struct {
 	uint16_t data_len;
 	uint16_t crc;
 } nmsg_hdr_t;
+
+static inline void* nmsg_data(nmsg_hdr_t *hdr)
+{
+	return (void*)((char*)hdr + sizeof(nmsg_hdr_t));
+}
 
 #ifdef __KERNEL__
 /* 
@@ -41,7 +46,7 @@ int nmsg_enqueue(nmsg_hdr_t *hdr, void *buff, uint32_t buff_size, uint32_t key);
 #else /* __KERNEL__ */
 
 /* init the ntrack message system, for libpps.so call by others */
-int nt_message_init(void);
+int nt_message_init(void **ui_base, void **fi_base);
 
 typedef int (*nmsg_cb_t)(void *p);
 /*

@@ -62,6 +62,12 @@ int ntrack_conf_sync(char *conf_str)
 			continue;
 		}
 
+		/* fill name */
+		str = nx_json_get(node, "Name");
+		if(str->type == NX_JSON_STRING) {
+			strncpy(rule.name, str->text_value, RULE_NAME_SIZE);
+		}
+
 		/* apply sets. */
 		j = 0;
 		while((str = nx_json_item(sets, j++)) != NULL) {
@@ -77,9 +83,10 @@ int ntrack_conf_sync(char *conf_str)
 				nt_error("ipset[%s] not found.\n", str->text_value);
 				continue;
 			}
+			nt_info("ipset[%s] add to rule[%s]\n", str->text_value, rule.name);
+
 			rule.uset_idx[rule.num_idx] = idx;
 			rule.num_idx ++;
-			strncpy(rule.name, str->text_value, RULE_NAME_SIZE);
 			if(rule.num_idx > MAX_USR_SET) {
 				nt_error("ipset rule num overflow.\n");
 				break;
@@ -193,7 +200,17 @@ int user_need_redirect(struct nos_user_info *ui)
 		return -EINVAL;
 	}
 
-	return conf->rules[idx].redirect_flags;
+	/* check ui auth status */
+	if (nt_auth_status(ui) <= AUTH_REQ) {
+		nt_auth_set_status(ui, AUTH_REQ);
+		return 0;
+	}
+
+	if (conf->rules[idx].redirect_flags) {
+		return 1;
+	}
+
+	return 0;
 }
 
 /* config netlink sockets */

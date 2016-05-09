@@ -13,6 +13,8 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
+#include <linux/nos_track.h>
+
 #include <ntrack_rbf.h>
 #include <ntrack_log.h>
 #include <ntrack_msg.h>
@@ -29,9 +31,6 @@ static uint32_t shm_user_offset;
 static uint32_t shm_flow_offset;
 static uint32_t nt_cap_block_sz;
 static rbf_t *nt_message_rbf = NULL;
-
-struct nos_flow_info *nos_flow_info_base = NULL;
-struct nos_user_info *nos_user_info_base = NULL;
 
 static int proc_uint(uint32_t *out, const char *fname)
 {
@@ -75,13 +74,13 @@ static int proc_pars_init(void)
 	nt_info("nt proc: \n"
 		"\tuser offset: 0x%x\n" 
 		"\tflow offset: 0x%x\n" 
-		"\tblock cap size: 0x%x\n", 
+		"\tcapblk size: 0x%x\n", 
 		shm_user_offset, shm_flow_offset, nt_cap_block_sz);
 
 	return 0;
 }
 
-static int shm_init(void)
+static int shm_init(void **ui_base, void ** fi_base)
 {
 	int fd = open(fn_sys_mem, O_RDWR);
 	if(fd == -1) {
@@ -89,7 +88,7 @@ static int shm_init(void)
 		return -EINVAL;
 	}
 
-	shm_base_addr = mmap(0, 4<<20, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 16<<20);
+	shm_base_addr = mmap(0, SIZE_RESERVE_MEM, PROT_READ | PROT_WRITE, MAP_SHARED, fd, START_RESERVE_MEM);
 	if (!shm_base_addr) {
 		nt_error("mem map.\n");
 		return -ENOMEM;
@@ -97,11 +96,11 @@ static int shm_init(void)
 	shm_base_user = shm_base_addr + shm_user_offset;
 	shm_base_flow = shm_base_addr + shm_flow_offset;
 
-	nt_info("shm base: %p, user: %p, flow: %p\n", \
+	nt_info("shm[off:%x, size: %x]\n\tbase: %p, user: %p, flow: %p\n", START_RESERVE_MEM, SIZE_RESERVE_MEM, \
 		shm_base_addr, shm_base_user, shm_base_flow);
 
-	nos_flow_info_base = (struct nos_flow_info*)shm_base_flow;
-	nos_user_info_base = (struct nos_user_info*)shm_base_user;
+	*fi_base = shm_base_flow;
+	*ui_base = shm_base_user;
 
 	return 0;
 }
@@ -136,13 +135,13 @@ static int shm_rbf_init(void)
 	return 0;
 }
 
-int nt_message_init(void)
+int nt_message_init(void **ui_base, void **fi_base)
 {
 	if (proc_pars_init()) {
 		return -EINVAL;
 	}
 
-	if (shm_init()) {
+	if (shm_init(ui_base, fi_base)) {
 		return -EINVAL;
 	}
 

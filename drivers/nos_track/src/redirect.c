@@ -166,8 +166,8 @@ int ntrack_redirect(struct nos_user_info *ui,
 		goto __finished;
 	}
 	len = snprintf(url, redirect_len, http_redir_fmt, 
-		"1.2.3.4", "aa:bb:cc:dd:ee:ff", "lan0", "4294967295", "4294967295",
-		"1.2.3.4", "aa:bb:cc:dd:ee:ff", "lan0", "4294967295", "4294967295");
+		"1.2.3.4", "aa:bb:cc:dd:ee:ff", in->name, ui->id, ui->magic,
+		"1.2.3.4", "aa:bb:cc:dd:ee:ff", in->name, ui->id, ui->magic);
 	nt_assert(len > 0 && len <= redirect_len);
 
 	nt_debug("send redirect http[%d] length: %d\n", redirect_len, len);

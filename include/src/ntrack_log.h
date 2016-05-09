@@ -1,11 +1,25 @@
 #ifndef __NTRACK_LOGS_H__
-#ifdef __KERNEL__
 
+//common defs
+#define NIPQUAD(addr) \
+	((unsigned char *)&addr)[0], \
+	((unsigned char *)&addr)[1], \
+	((unsigned char *)&addr)[2], \
+	((unsigned char *)&addr)[3]
+
+#define HIPQUAD(addr) \
+	((unsigned char *)&addr)[3], \
+	((unsigned char *)&addr)[2], \
+	((unsigned char *)&addr)[1], \
+	((unsigned char *)&addr)[0]
+
+#ifdef __KERNEL__
 #include <linux/kernel.h>
 #include <linux/module.h>
 
 #include <linux/klog.h>
 
+#define nt_print printk
 extern void *ntrack_klog_fd;
 #define nt_debug(fmt...) 	klog_debug(ntrack_klog_fd, ##fmt)
 #define nt_info(fmt...) 	klog_info(ntrack_klog_fd, ##fmt)
@@ -29,6 +43,7 @@ extern void *ntrack_klog_fd;
 
 #include <sys/types.h>
 
+#define nt_print printf
 void hexdump(FILE *fp, const void *data, int size);
 
 #define nt_debug(fmt...) 	do{ \

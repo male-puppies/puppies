@@ -21,6 +21,13 @@
 #include <ntrack_msg.h>
 #include <ntrack_auth.h>
 
+#ifdef NDEBUG
+#warning "assert need this..."
+#undef NDEBUG
+#endif
+
+struct nos_flow_info *nos_flow_info_base = NULL;
+struct nos_user_info *nos_user_info_base = NULL;
 
 int nl_sock = -1;
 static int nl_init(void)
@@ -94,19 +101,46 @@ int xmit(char *data)
 
 static int fn_message_disp(void *p)
 {
-	nt_dump(p, 128, "cap:\n");
+	// nt_dump(p, 128, "cap:\n");
+	nmsg_hdr_t *hdr = p;
+	switch(hdr->type) {
+		case en_MSG_t_PCAP:
+		break;
+		case en_MSG_t_NODE:
+		break;
+		case en_MSG_t_AUTH:
+		{
+			user_info_t *ui;
+			auth_msg_t *auth = nmsg_data(hdr);
+			
+			nt_info("message uid: %u, magic: %u\n", auth->id, auth->magic);
+
+			ui = nt_get_user_by_id(auth->id, auth->magic);
+			if(ui) {
+				dump_user(ui);
+			}else{
+				nt_error("[%u:%u]->not found userinfo.\n", auth->id, auth->magic);
+			}
+		}
+		break;
+		default:
+		{
+			nt_error("unknown message. %d\n", hdr->type);
+		}
+		break;
+	}
 	
 	return 0;
 }
 
 char *conf_str = " \
 	[{\
-		\"Name\": \"\", \
+		\"Name\": \"Webauth\", \
 		\"IPSets\": [\"baidu\", \"weixin\", \"3p\"], \
 		\"RedirectFlags\": 1 \
 	}, \
 	{ \
-		\"Name\": \"\", \
+		\"Name\": \"AutoAuth\", \
 		\"IPSets\": [], \
 		\"RedirectFlags\": 0 \
 	}]";
@@ -129,10 +163,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (nt_message_init()) {
+	if (nt_message_init(&nos_user_info_base, &nos_flow_info_base)) {
 		nt_error("ntrack message init failed.\n");
 		return 0;
 	}
+
+	/* debug */
+	nt_dump(nos_user_info_base, 128, "user base: %p\n", nos_user_info_base);
+	nt_dump(nos_flow_info_base, 128, "flow base: %p\n", nos_flow_info_base);
 
 	nl_init();
 
