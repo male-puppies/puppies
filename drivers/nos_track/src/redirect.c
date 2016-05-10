@@ -159,6 +159,10 @@ int ntrack_redirect(struct nos_user_info *ui,
 	/* 构造一个URL重定向包, 从in接口发出去 */
 	char *url;
 	int len;
+	char str_id[16], str_magic[16];
+
+	snprintf(str_id, sizeof(str_id), "%u", ui->id);
+	snprintf(str_magic, sizeof(str_magic), "%u", ui->magic);
 
 	url = kmalloc(redirect_len, GFP_NOWAIT);
 	if(!url) {
@@ -166,11 +170,12 @@ int ntrack_redirect(struct nos_user_info *ui,
 		goto __finished;
 	}
 	len = snprintf(url, redirect_len, http_redir_fmt, 
-		"1.2.3.4", "aa:bb:cc:dd:ee:ff", in->name, ui->id, ui->magic,
-		"1.2.3.4", "aa:bb:cc:dd:ee:ff", in->name, ui->id, ui->magic);
-	nt_assert(len > 0 && len <= redirect_len);
+		"1.2.3.4", "aa:bb:cc:dd:ee:ff", in->name, str_id, str_magic,
+		"1.2.3.4", "aa:bb:cc:dd:ee:ff", in->name, str_id, str_magic);
 
+	nt_assert(len > 0 && len <= redirect_len);
 	nt_debug("send redirect http[%d] length: %d\n", redirect_len, len);
+	
 	if(auth_http(url, len, skb, in)) {
 		nt_error("error send redirect url.\n");
 		goto __finished;
