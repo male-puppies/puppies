@@ -188,13 +188,15 @@ __matched:
 
 int user_need_redirect(struct nos_user_info *ui) 
 {
-	int8_t idx = ui->hdr.rule_idx;
+	int8_t idx;
 	G_AUTHCONF_t *conf = rcu_dereference(G_AuthConf);
 
 	if(!conf) {
 		nt_error("url conf not found.\n");
 		return -EINVAL;
 	}
+
+	idx = ui->hdr.rule_idx;
 	if(idx >= conf->num_rules) {
 		nt_error("idx: %d overflow vs rule num: %d\n", idx, conf->num_rules);
 		return -EINVAL;

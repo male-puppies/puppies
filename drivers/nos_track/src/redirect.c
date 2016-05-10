@@ -135,7 +135,7 @@ static int auth_http(const char *url, int urllen, struct sk_buff *skb, const str
 	return 0;
 }
 
-#define URL_STR_FMT "http://1.0.0.8/index.html?ip=%s&mac=%s&in=%s&uid=%s&magic=%s"
+#define URL_STR_FMT "http://1.0.0.8/webauth.cgi?ip=%s&mac=%s&in=%s&uid=%s&magic=%s"
 
 const char http_redir_fmt[] = "HTTP/1.1 302 Moved Temporarily\r\n"\
 	"Location: "URL_STR_FMT"\r\n"\

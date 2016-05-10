@@ -1,25 +1,37 @@
 #pragma once
 
 #include <linux/nos_track.h>
+#include <ntrack_log.h>
 
-#define USER_PRIV_SZ sizeof((user_info_t*)(void*(0))->private)
-#define FLOW_PRIV_SZ sizeof((flow_info_t*)(void*(0))->private)
+#define USER_PRIV_SZ 		sizeof((user_info_t*)(void*(0))->private)
+#define FLOW_PRIV_SZ 		sizeof((flow_info_t*)(void*(0))->private)
+#define flow_info_count 	NOS_FLOW_TRACK_MAX
+#define user_info_count 	NOS_USER_TRACK_MAX
 
 #ifdef __KERNEL__
 
 static inline flow_info_t * nt_flow(struct nos_track *nt)
 {
-	return nt->flow;
+	flow_info_t *fi = nt->flow;
+	nt_assert(fi);
+	nt_assert(fi->id >= 0 && fi->id < NOS_FLOW_TRACK_MAX);
+	return fi;
 }
 
 static inline user_info_t * nt_user(struct nos_track *nt)
 {
-	return nt->user;
+	user_info_t *ui = nt->user;
+	nt_assert(ui);
+	nt_assert(ui->id >= 0 && ui->id < NOS_USER_TRACK_MAX);
+	return ui;
 }
 
 static inline user_info_t * nt_peer(struct nos_track *nt)
 {
-	return nt->peer;
+	user_info_t *ui = nt->peer;
+	nt_assert(ui);
+	nt_assert(ui->id >= 0 && ui->id < NOS_USER_TRACK_MAX);
+	return ui;
 }
 
 #else //user space.
