@@ -1,0 +1,23 @@
+#!/bin/sh 
+
+IPSET_ADD="ipset -! -A"
+
+ipset_init()
+{
+	ipset -! create WebAuth hash:ip
+	ipset add WebAuth 192.168.1.1/24
+}
+
+iptables_init()
+{
+}
+
+bridge_init()
+{
+	brctl addbr br-lo
+	ip addr add 1.0.0.8/32 brd + dev br-lo 
+}
+
+bridge_init
+ipset_init
+iptables_init

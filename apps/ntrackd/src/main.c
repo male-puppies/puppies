@@ -135,13 +135,13 @@ static int fn_message_disp(void *p)
 
 char *conf_str = " \
 	[{\
-		\"Name\": \"Webauth\", \
-		\"IPSets\": [\"baidu\", \"weixin\", \"3p\"], \
+		\"Name\": \"Web\", \
+		\"IPSets\": [\"WebAuth\", \"Default\"], \
 		\"RedirectFlags\": 1 \
 	}, \
 	{ \
-		\"Name\": \"AutoAuth\", \
-		\"IPSets\": [], \
+		\"Name\": \"Auto\", \
+		\"IPSets\": [\"AutoAuth\"], \
 		\"RedirectFlags\": 0 \
 	}]";
 
