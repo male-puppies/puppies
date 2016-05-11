@@ -19,6 +19,11 @@ static inline void *nt_flow_priv(flow_info_t *fi)
 	return fi->private;
 }
 
+static inline uint32_t magic_valid(uint32_t m)
+{
+	return m % 2 == 0;
+}
+
 #ifdef __KERNEL__
 /* kernel node opt apis */
 static inline flow_info_t * nt_flow(struct nos_track *nt)

@@ -94,12 +94,13 @@ int ntrack_conf_sync(char *conf_str)
 		}
 
 		/* get Redirect flags */
-		flags = nx_json_get(node, "RedirectFlags");
+		flags = nx_json_get(node, "Flags");
 		if(flags->type == NX_JSON_INTEGER) {
-			rule.redirect_flags = flags->int_value;
+			rule.flags = flags->int_value;
 		} else {
-			nt_error("rule: %i, redirect flag type error.\n", i);
+			nt_error("rule: %i, flag type error.\n", i);
 		}
+		rule.magic = jiffies;
 
 		/* save rule to Global configure. */
 		if (rule.num_idx) {
@@ -176,6 +177,7 @@ int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 			if (ret) {
 				ui->hdr.group_id = -1; /* set user mark for group identity */
 				ui->hdr.rule_idx = i;
+				ui->hdr.rule_magic = rule->magic;
 				nt_debug("ipset test match: %d\n", ret);
 				goto __matched;
 			}
@@ -188,32 +190,66 @@ __matched:
 	return ret; //not user
 }
 
-int user_need_redirect(user_info_t *ui)
+static inline auth_rule_t *user_get_rule(user_info_t *ui, G_AUTHCONF_t *conf)
 {
-	int8_t idx;
-	G_AUTHCONF_t *conf = rcu_dereference(G_AuthConf);
-
-	if(!conf) {
-		nt_error("url conf not found.\n");
-		return 0;
-	}
-
-	idx = ui->hdr.rule_idx;
-	if(idx <= 0) {
-		nt_debug("ipset rule not inited.\n");
-		return 0;
-	}
+	int8_t idx = ui->hdr.rule_idx;
 
 	if(idx >= conf->num_rules) {
 		nt_error("idx: %d overflow vs rule num: %d\n", idx, conf->num_rules);
+		return NULL;
+	}
+	return &conf->rules[idx];
+}
+
+int user_need_redirect(user_info_t *ui, struct sk_buff *skb)
+{
+	int ret;
+	G_AUTHCONF_t *conf = rcu_dereference(G_AuthConf);
+	auth_rule_t *rule;
+
+	if(!conf) {
+		nt_debug("url conf not found.\n");
+		return 0;
+	}
+
+	if(conf->num_rules <= 0) {
+		nt_debug("ipset nil rule.\n");
+		return 0;
+	}
+
+	if(!ui->hdr.rule_magic) {
+		/* ipset not matched yet */
+		if(!ntrack_user_match(ui, skb)) {
+			nt_warn("nil magic, not match user.\n");
+			return 0;
+		}
+	} 
+	rule = user_get_rule(ui, conf);
+
+	/* check rule magic */
+	if(ui->hdr.rule_magic != rule->magic) {
+		nt_warn("ipset conf updated re-match.\n");
+		if(!ntrack_user_match(ui, skb)) {
+			nt_warn("invalid magic, re-match failed.\n");
+			return 0;
+		}
+		rule = user_get_rule(ui, conf);
+	}
+
+	/* redirect rule found> ? */
+	if(!rule) {
+		nt_error(FMT_USER_STR" nil rule matched.\n", FMT_USER(ui));
 		return 0;
 	}
 
 	/* check ui auth status */
 	if (nt_auth_status(ui) <= AUTH_REQ) {
-		nt_auth_set_status(ui, AUTH_REQ);
-		if (conf->rules[idx].redirect_flags) {
+		if (rule->flags) {
+			nt_auth_set_status(ui, AUTH_REQ);
 			return 1;
+		} else { /* auto auth */
+			nt_auth_set_status(ui, AUTH_OK);
+			return 0;
 		}
 	}
 

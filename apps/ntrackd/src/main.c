@@ -131,12 +131,12 @@ char *conf_str = " \
 	[{\
 		\"Name\": \"Web\", \
 		\"IPSets\": [\"WebAuth\", \"Default\"], \
-		\"RedirectFlags\": 1 \
+		\"Flags\": 1 \
 	}, \
 	{ \
 		\"Name\": \"Auto\", \
 		\"IPSets\": [\"AutoAuth\"], \
-		\"RedirectFlags\": 0 \
+		\"Flags\": 0 \
 	}]";
 
 int main(int argc, char *argv[])

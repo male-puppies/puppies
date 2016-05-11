@@ -81,24 +81,26 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 	}
 
 	ui = nt_user(nos);
-	if (user_need_redirect(ui)) {
+	if (user_need_redirect(ui, skb)) {
 		if(auth_check_http(iph, skb)) {
 			ntrack_redirect(ui, skb, in, out);
 		}
 	}
 
 	if (user_timeout(ui)) {
-		/* user online message */
-		nmsg_hdr_t hdr;
-		auth_msg_t auth;
-
-		auth.id = ui->id;
-		auth.magic = ui->magic;
-		nmsg_hdr_init(&hdr, en_MSG_t_AUTH, sizeof(auth));
-		if(nmsg_enqueue(&hdr, &auth, 0)) {
-			nt_debug("skb cap failed.\n");
-		}
 		user_update_timestamp(ui);
+		/* user online message */
+		if(nt_auth_status(ui) >= AUTH_OK) {
+			nmsg_hdr_t hdr;
+			auth_msg_t auth;
+
+			auth.id = ui->id;
+			auth.magic = ui->magic;
+			nmsg_hdr_init(&hdr, en_MSG_t_AUTH, sizeof(auth));
+			if(nmsg_enqueue(&hdr, &auth, 0)) {
+				nt_debug("skb cap failed.\n");
+			}
+		}
 	}
 	
 	return NF_ACCEPT;
