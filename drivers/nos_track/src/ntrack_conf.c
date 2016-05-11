@@ -178,7 +178,7 @@ int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 				ui->hdr.group_id = -1; /* set user mark for group identity */
 				ui->hdr.rule_idx = i;
 				ui->hdr.rule_magic = rule->magic;
-				nt_debug("ipset test match: %d\n", ret);
+				nt_debug("[%pI4] ipset [%s] match: %d\n", &ui->ip, rule->name, ret);
 				goto __matched;
 			}
 			// nt_debug("no match: [%s] %pI4 -> %pI4\n", rule->name, &iph->saddr, &iph->daddr);

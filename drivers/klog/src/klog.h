@@ -20,7 +20,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_debug(logfd, fmt...) \
         do { \
             if(klog_debug_check(logfd)) { \
-                printk("[debug] (%s, %d):\t", __FUNCTION__,  __LINE__);  \
+                printk("[dbug] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
             } \
         } while(0)
@@ -28,7 +28,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_info(logfd, fmt...) \
         do { \
             if(klog_info_check(logfd)) { \
-                printk("[info] (%s, %d):\t", __FUNCTION__,  __LINE__);  \
+                printk("[info] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
             } \
         } while(0)
@@ -36,7 +36,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_warn(logfd, fmt...) \
         do { \
             if(klog_warn_check(logfd)) { \
-                printk("[warn] (%s, %d):\t", __FUNCTION__,  __LINE__);  \
+                printk("[warn] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
             } \
         } while(0)
@@ -44,7 +44,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_error(logfd, fmt...) \
         do { \
             if(klog_error_check(logfd)) { \
-                printk("[error] (%s, %d):\t", __FUNCTION__,  __LINE__);  \
+                printk("[erro] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
             } \
         } while(0)
@@ -52,7 +52,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_dumpbuf(logfd, buf, size, fmt...) \
         do { \
             if(klog_dumpbuf_check(logfd)) { \
-                printk("[dump] (%s, %d):\t", __FUNCTION__,  __LINE__);  \
+                printk("[dump] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
                 hex_printout("", buf, size); \
             } \
@@ -61,7 +61,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_trace(logfd, level, fmt...) \
         do { \
             if(klog_trace_check(logfd, level)) { \
-                printk("[trace] (%s, %d):\t", __FUNCTION__,  __LINE__);  \
+                printk("[trac] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
             } \
         } while(0)
