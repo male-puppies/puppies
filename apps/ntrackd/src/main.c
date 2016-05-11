@@ -21,13 +21,7 @@
 #include <ntrack_msg.h>
 #include <ntrack_auth.h>
 
-#ifdef NDEBUG
-#warning "assert need this..."
-#undef NDEBUG
-#endif
-
-struct nos_flow_info *nos_flow_info_base = NULL;
-struct nos_user_info *nos_user_info_base = NULL;
+ntrack_t ntrack;
 
 int nl_sock = -1;
 static int nl_init(void)
@@ -115,7 +109,7 @@ static int fn_message_disp(void *p)
 			
 			nt_info("message uid: %u, magic: %u\n", auth->id, auth->magic);
 
-			ui = nt_get_user_by_id(auth->id, auth->magic);
+			ui = nt_get_user_by_id(&ntrack, auth->id, auth->magic);
 			if(ui) {
 				dump_user(ui);
 			}else{
@@ -163,14 +157,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (nt_message_init(&nos_user_info_base, &nos_flow_info_base)) {
+	if (nt_message_init(&ntrack)) {
 		nt_error("ntrack message init failed.\n");
 		return 0;
 	}
 
 	/* debug */
-	nt_dump(nos_user_info_base, 128, "user base: %p\n", nos_user_info_base);
-	nt_dump(nos_flow_info_base, 128, "flow base: %p\n", nos_flow_info_base);
+	nt_dump(ntrack.ui_base, 128, "user base: %p\n", ntrack.ui_base);
+	nt_dump(ntrack.fi_base, 128, "flow base: %p\n", ntrack.fi_base);
 
 	nl_init();
 

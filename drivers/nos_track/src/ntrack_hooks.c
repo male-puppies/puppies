@@ -16,6 +16,10 @@
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack system driver"
 
+extern int ntrack_conf_init(void);
+extern void ntrack_conf_exit(void);
+extern int ntrack_user_match(user_info_t *ui, struct sk_buff *skb);
+
 int l3filter(struct iphdr* iph)
 {
 	//TCP, UDP, ICMP, supported.
@@ -88,13 +92,10 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 		nmsg_hdr_t hdr;
 		auth_msg_t auth;
 
-		memset(&hdr, 0, sizeof(hdr));
-		hdr.type = en_MSG_t_AUTH;
-		hdr.data_len = sizeof(auth);
-
 		auth.id = ui->id;
 		auth.magic = ui->magic;
-		if(nmsg_enqueue(&hdr, &auth, hdr.data_len, 0)) {
+		nmsg_hdr_init(&hdr, en_MSG_t_AUTH, sizeof(auth));
+		if(nmsg_enqueue(&hdr, &auth, 0)) {
 			nt_debug("skb cap failed.\n");
 		}
 		user_update_timestamp(ui);
@@ -128,10 +129,8 @@ static unsigned int ntrack_hook_test(const struct nf_hook_ops *ops,
 	
 	/* user online message */
 	// nmsg_hdr_t hdr;
-	// memset(&hdr, 0, sizeof(hdr));
-	// hdr.type = EN_MSG_T_AUTH;
-	// hdr.len = sizeof(uint32_t);
-	// if(nmsg_enqueue(&hdr, &ct->mark, hdr.len, 0)) {
+	// nmsg_hdr_init(&hdr, en_MSG_t_NODE, sizeof(uint32_t));
+	// if(nmsg_enqueue(&hdr, &ct->mark, 0)) {
 	// 	nt_debug("skb cap failed.\n");
 	// }
 
@@ -155,9 +154,6 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	}
 };
 
-extern int ntrack_user_match(struct nos_user_info *ui, struct sk_buff *skb);
-extern int ntrack_conf_init(void);
-extern void ntrack_conf_exit(void);
 void *ntrack_klog_fd = NULL;
 static int __init ntrack_modules_init(void)
 {

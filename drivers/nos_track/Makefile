@@ -18,7 +18,7 @@ define KernelPackage/ntrack
   TITLE:=nos track kernel driver
   FILES:=$(PKG_BUILD_DIR)/ntrack.ko
   DEPENDS:=+kmod-klog +kmod-ipt-ipset +pps_comm
-  AUTOLOAD:=$(call AutoProbe, klog, ntrack)
+  AUTOLOAD:=$(call AutoProbe, ntrack)
   KCONFIG:=
 endef
 

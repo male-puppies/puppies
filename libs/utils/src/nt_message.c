@@ -80,7 +80,7 @@ static int proc_pars_init(void)
 	return 0;
 }
 
-static int shm_init(void **ui_base, void ** fi_base)
+static int shm_init(void **ui_base, uint32_t *ui_cnt, void ** fi_base, uint32_t *fi_cnt)
 {
 	int fd = open(fn_sys_mem, O_RDWR);
 	if(fd == -1) {
@@ -101,6 +101,8 @@ static int shm_init(void **ui_base, void ** fi_base)
 
 	*fi_base = shm_base_flow;
 	*ui_base = shm_base_user;
+	*fi_cnt = flow_info_count;
+	*ui_cnt = user_info_count;
 
 	return 0;
 }
@@ -135,13 +137,15 @@ static int shm_rbf_init(void)
 	return 0;
 }
 
-int nt_message_init(void **ui_base, void **fi_base)
+int nt_message_init(ntrack_t *nt)
 {
 	if (proc_pars_init()) {
 		return -EINVAL;
 	}
 
-	if (shm_init(ui_base, fi_base)) {
+	if (shm_init(
+		&nt->ui_base, &nt->ui_count, 
+		&nt->fi_base, &nt->fi_count)) {
 		return -EINVAL;
 	}
 

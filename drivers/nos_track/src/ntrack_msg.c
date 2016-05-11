@@ -80,10 +80,11 @@ void nmsg_cleanup(void)
 	}
 }
 
-int nmsg_enqueue(nmsg_hdr_t *hdr, void *buf_in, uint32_t size, uint32_t key)
+int nmsg_enqueue(nmsg_hdr_t *hdr, void *buf_in, uint32_t key)
 {
-	nmsg_cpu_t *cur_msgq = nmsg_target_cpu(KEY_TO_CORE(key));
+	uint32_t size = hdr->data_len;
 	nmsg_node_t *node;
+	nmsg_cpu_t *cur_msgq = nmsg_target_cpu(KEY_TO_CORE(key));
 
 	nt_assert(cur_msgq);
 	if(cur_msgq->count > NCAP_MAX_COUNT) {

@@ -103,7 +103,7 @@ int ntrack_conf_sync(char *conf_str)
 
 		/* save rule to Global configure. */
 		if (rule.num_idx) {
-			nt_info("rule[%s] valid added.\n", rule.name);
+			nt_info("rule:[%s] valid added.\n", rule.name);
 			conf_tmp->rules[conf_tmp->num_rules] = rule;
 			conf_tmp->num_rules ++;
 			if(conf_tmp->num_rules > MAX_URL_RULES) {
@@ -112,6 +112,7 @@ int ntrack_conf_sync(char *conf_str)
 			}
 		}
 	}
+	nt_info("num rules: %d set.\n", conf_tmp->num_rules);
 
 	if(G_AuthConf) {
 		G_AUTHCONF_t *tmp = G_AuthConf;
@@ -125,7 +126,7 @@ int ntrack_conf_sync(char *conf_str)
 }
 
 /* ipset hash:ip hash:mac check src address from skb. */
-int ntrack_user_match(struct nos_user_info *ui, struct sk_buff *skb)
+int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 {
 	int ret = 0, i, j;
 	struct ip_set_adt_opt opt;
@@ -173,6 +174,7 @@ int ntrack_user_match(struct nos_user_info *ui, struct sk_buff *skb)
 		for (j = 0; j < rule->num_idx; ++j) {
 			ret = ip_set_test(rule->uset_idx[j], skb, &act, &opt);
 			if (ret) {
+				ui->hdr.group_id = -1; /* set user mark for group identity */
 				ui->hdr.rule_idx = i;
 				nt_debug("ipset test match: %d\n", ret);
 				goto __matched;
@@ -186,30 +188,33 @@ __matched:
 	return ret; //not user
 }
 
-int user_need_redirect(struct nos_user_info *ui) 
+int user_need_redirect(user_info_t *ui)
 {
 	int8_t idx;
 	G_AUTHCONF_t *conf = rcu_dereference(G_AuthConf);
 
 	if(!conf) {
 		nt_error("url conf not found.\n");
-		return -EINVAL;
+		return 0;
 	}
 
 	idx = ui->hdr.rule_idx;
+	if(idx <= 0) {
+		nt_debug("ipset rule not inited.\n");
+		return 0;
+	}
+
 	if(idx >= conf->num_rules) {
 		nt_error("idx: %d overflow vs rule num: %d\n", idx, conf->num_rules);
-		return -EINVAL;
+		return 0;
 	}
 
 	/* check ui auth status */
 	if (nt_auth_status(ui) <= AUTH_REQ) {
 		nt_auth_set_status(ui, AUTH_REQ);
-		return 0;
-	}
-
-	if (conf->rules[idx].redirect_flags) {
-		return 1;
+		if (conf->rules[idx].redirect_flags) {
+			return 1;
+		}
 	}
 
 	return 0;

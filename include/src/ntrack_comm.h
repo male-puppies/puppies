@@ -3,13 +3,24 @@
 #include <linux/nos_track.h>
 #include <ntrack_log.h>
 
-#define USER_PRIV_SZ 		sizeof((user_info_t*)(void*(0))->private)
-#define FLOW_PRIV_SZ 		sizeof((flow_info_t*)(void*(0))->private)
 #define flow_info_count 	NOS_FLOW_TRACK_MAX
 #define user_info_count 	NOS_USER_TRACK_MAX
 
-#ifdef __KERNEL__
+/* KERNEL & USER comm use. */
+#define USER_PRIV_SZ 		sizeof((user_info_t*)(void*(0))->private)
+#define FLOW_PRIV_SZ 		sizeof((flow_info_t*)(void*(0))->private)
+static inline void *nt_user_priv(user_info_t *ui)
+{
+	return ui->private;
+}
 
+static inline void *nt_flow_priv(flow_info_t *fi)
+{
+	return fi->private;
+}
+
+#ifdef __KERNEL__
+/* kernel node opt apis */
 static inline flow_info_t * nt_flow(struct nos_track *nt)
 {
 	flow_info_t *fi = nt->flow;
@@ -33,40 +44,48 @@ static inline user_info_t * nt_peer(struct nos_track *nt)
 	nt_assert(ui->id >= 0 && ui->id < NOS_USER_TRACK_MAX);
 	return ui;
 }
+#else /* __KERNEL__ */
 
-#else //user space.
+/* node track base address mmmap used. */
+typedef struct {
+	uint32_t fi_count, ui_count;
+	flow_info_t *fi_base;
+	user_info_t *ui_base;
+} ntrack_t;
 
-/* node track */
-extern flow_info_t *nos_flow_info_base;
-extern user_info_t *nos_user_info_base;
-
-static inline flow_info_t * nt_get_flow_by_id(uint32_t id, uint32_t magic)
+/* userspace node opt apis */
+static inline flow_info_t * nt_get_flow_by_id(ntrack_t *nt, uint32_t id, uint32_t magic)
 {
+	flow_info_t *fi = &nt->fi_base[id];
+
 	nt_assert(id >= 0 && id < NOS_FLOW_TRACK_MAX);
-	return &nos_flow_info_base[id];
+	/* check magic */
+	if (fi->magic != magic) {
+		nt_warn("fid: %u, magic inv: %u-%u\n", id, magic, fi->magic);
+		return NULL;
+	}
+	return fi;
 }
 
-static inline user_info_t * nt_get_user_by_id(uint32_t id, uint32_t magic)
+static inline user_info_t * nt_get_user_by_id(ntrack_t *nt, uint32_t id, uint32_t magic)
 {
+	user_info_t *ui = &nt->ui_base[id];
+
 	nt_assert(id >= 0 && id < NOS_USER_TRACK_MAX);
-	return &nos_user_info_base[id];
+	/* check magic */
+	if (ui->magic != magic) {
+		nt_warn("uid: %u, magic inv: %u-%u\n", id, magic, ui->magic);
+		return NULL;
+	}
+	return ui;
 }
 
-static inline user_info_t * nt_get_user_by_flow(uint32_t f_id, uint32_t f_magic)
+static inline user_info_t * nt_get_user_by_flow(ntrack_t *nt, flow_info_t *fi)
 {
-	return &nos_user_info_base[nt_get_flow_by_id(f_id, f_magic)->user_id];
+	uint32_t uid = fi->user_id;
+
+	nt_assert(uid >=0 && uid < NOS_USER_TRACK_MAX);
+	return &nt->ui_base[uid];
 }
 /* end node track */
-
-#endif //__KERNEL__
-
-/* KERNEL & USER comm use. */
-static inline void *nt_user_priv(user_info_t *ui)
-{
-	return ui->private;
-}
-
-static inline void *nt_flow_priv(flow_info_t *fi)
-{
-	return fi->private;
-}
+#endif /* __KERNEL__ */
